@@ -1,0 +1,19 @@
+{
+  "name": "meadowlark",
+  "version": "1.0.0",
+  "description": "Meadowlark Travel",
+  "main": "meadowlark.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kolohelios/web-development-with-node-and-express-by-ethan-brown"
+  },
+  "author": "Jon Edwards <jkedwards@me.com>",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.13.1",
+    "express-handlebars": "^2.0.1"
+  }
+}
