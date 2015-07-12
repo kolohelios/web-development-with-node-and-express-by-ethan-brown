@@ -9,9 +9,13 @@ var app = express();
 
 // set up handlebars view engine
 var handlebars = require('express-handlebars')
+// by default Express will look in /views/layouts for layouts
   .create({defaultLayout: 'main'});
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
+
+app.disable('x-powered-by');
+app.set('view cache', true);
 
 app.set('port', process.env.port || 3000);
 // in Express, the order of these routes is important (kind of like 'switch')
@@ -52,8 +56,8 @@ app.use(function(req, res){
 });
 
 // custom 500 page
-app.use(function(err, req, res){
-  console.log(err.stack);
+app.use(function(err, req, res, next){
+  console.log(err.stack, next);
   res.status(500);
   res.render('500');
 });
