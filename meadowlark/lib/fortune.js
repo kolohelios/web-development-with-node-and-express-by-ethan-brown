@@ -1,3 +1,5 @@
+'use strict';
+
 var fortuneCookies = [
   'Conquer your fears or they will conquer you.',
   'Rivers need springs.',
