@@ -14,7 +14,9 @@
   "license": "MIT",
   "dependencies": {
     "express": "^4.13.1",
-    "express-handlebars": "^2.0.1"
+    "express-handlebars": "^2.0.1",
+    "express-logger": "0.0.3",
+    "nodemailer": "0.7.1"
   },
   "devDependencies": {
     "chai": "^3.0.0",
@@ -23,7 +25,9 @@
     "grunt-cafe-mocha": "^0.1.13",
     "grunt-eslint": "^16.0.0",
     "grunt-link-checker": "^0.1.0",
+    "loadtest": "^1.2.11",
     "mocha": "^2.2.5",
+    "morgan": "^1.6.1",
     "zombie": "^2.0.00"
   }
 }
