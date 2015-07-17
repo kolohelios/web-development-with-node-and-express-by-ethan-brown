@@ -9,14 +9,16 @@ var fs = require('fs');
 var formidable = require('formidable');
 var mongoose = require('mongoose');
 var Vacation = require('./models/vacation.js');
+var Attraction = require('./models/attraction.js');
 var VacationInSeasonListener = require('./models/vacationInSeasonListener');
 var fortune = require('./lib/fortune.js');
 var credentials = require('./lib/credentials.js');
 var emailService = require('./lib/email.js')(credentials);
 var Path = require('path');
+var session = require('express-session');
 
 var server;
-var saveContestEntry;
+var saveContestEntry, convertFromUSD;
 var app = express();
 
 var opts = {
@@ -28,11 +30,18 @@ var opts = {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
+app.use('/api', require('cors')());
+
 var MongoSessionStore = require('session-mongoose')(require('connect'));
 var sessionStore = new MongoSessionStore({url: credentials.mongoose.connectionString});
 
-app.use(require('cookie-parser')(credentials.cookieSecret));
-app.use(require('express-session')({store: sessionStore}));
+// app.use(require('cookie-parser')(credentials.cookieSecret));
+app.use(session({
+  secret: credentials.cookieSecret,
+  resave: false,
+  saveUninitialized: true,
+  store: sessionStore
+}));
 
 switch(app.get('env')){
   case 'development':
@@ -198,7 +207,7 @@ app.get('/vacations', function(req, res){
           sku: vacation.sku,
           name: vacation.name,
           description: vacation.description,
-          price: convertFromUSD(vacation.priceInCents/100, currency).toFixed(2),
+          price: convertFromUSD(vacation.priceInCents / 100, currency).toFixed(2),
           inSeason: vacation.inSeason
         };
       })
@@ -253,7 +262,7 @@ app.get('/set-currency/:currency', function(req, res){
   return res.redirect(303, '/vacations');
 });
 
-function convertFromUSD(value, currency){
+convertFromUSD = function(value, currency){
   switch(currency){
     case 'USD':
       return value * 1;
@@ -264,7 +273,74 @@ function convertFromUSD(value, currency){
     default:
       return NaN;
   }
-}
+};
+
+var rest = require('connect-rest');
+
+// API configuration
+var apiOptions = {
+  context: '/api',
+  domain: require('domain').create()
+};
+
+// link API into pipeline
+app.use(rest.rester(apiOptions));
+
+// API routes should go after website routes but before the 404
+rest.get('/attractions', function(req, content, cb){
+  Attraction.find({approved: true}, function(err, attractions){
+    if(err){return cb({error: 'Internal error.'}); }
+    cb(null, attractions.map(function(a){
+      return {
+        name: a.name,
+        id: a._id,
+        description: a.description,
+        location: a.location
+      };
+    }));
+  });
+});
+
+rest.post('/attractions', function(req, content, cb){
+  var a = new Attraction({
+    name: req.body.name,
+    description: req.body.description,
+    location: {lat: req.body.lat, lng: req.body.lng},
+    history: {
+      event: 'created',
+      email: req.body.email,
+      date: new Date()
+    },
+    approved: false
+  });
+  a.save(function(err){
+    if(err){return cb({error: 'Unable to add attraction.'}); }
+    cb(null, {id: a._id});
+  });
+});
+
+rest.get('/attractions/:id', function(req, content, cb){
+  Attraction.findById(req.params.id, function(err, a){
+    if(err){return cb({error: 'Unable to add attraction.'}); }
+    cb(null, {
+      name: a.name,
+      id: a._id,
+      description: a.description,
+      location: a.location
+    });
+  });
+});
+
+apiOptions.domain.on('error', function(err){
+  console.log('API domain error.\n', err.stack);
+  setTimeout(function(){
+    console.log('Server shutting down after API domain error.');
+    process.exit(1);
+  }, 5000);
+  server.close();
+  var worker = require('cluster').worker;
+  if(worker){worker.disconnect; }
+});
 
 // routes ^^^^^^ above here
 
