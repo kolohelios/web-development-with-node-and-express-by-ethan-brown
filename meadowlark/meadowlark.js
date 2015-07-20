@@ -63,7 +63,14 @@ switch(app.get('env')){
 // set up handlebars view engine
 var handlebars = require('express-handlebars')
 // by default Express will look in /views/layouts for layouts
-  .create({defaultLayout: 'main'});
+  .create({
+    defaultLayout: 'main',
+    helpers: {
+      staticLocs: function(name){
+        return require('./lib/static.js').map(name);
+      }
+    }
+  });
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 
